@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(sudo rm:*)",
+      "Bash(cat ~/.ciq/*)",
+      "Bash(cat *developer_key*)",
+      "Bash(connect-iq-sdk-manager login:*)",
+      "Read(~/.ciq/**)",
+      "Read(~/.connect-iq-sdk-manager/**)"
+    ],
+    "ask": [
+      "Bash(git commit:*)"
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "$CLAUDE_PROJECT_DIR/.claude/statusline.sh"
+  }
+}

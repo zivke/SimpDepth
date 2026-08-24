@@ -1,0 +1,35 @@
+<resources>
+	<drawable-list id="backdrop" background="Graphics.COLOR_WHITE">
+		<shape type="rectangle" x="0" y="0" width="100%" height="18%" color="Graphics.COLOR_BLACK" />
+		<shape type="rectangle" x="0" y="86%" width="100%" height="20%" color="Graphics.COLOR_BLACK" />
+	</drawable-list>
+	<layouts>
+		<layout id="GlanceLayout" scope="Glance">
+			<label id="GlanceLabel" text="@Strings.AppName" x="0" y="50%"
+				color="Graphics.COLOR_WHITE" background="Graphics.COLOR_TRANSPARENT"
+				font="Graphics.FONT_GLANCE"
+				justification="Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER" />
+		</layout>
+		<layout id="MainLayout">
+			<drawable id="backdrop" />
+			<label id="depthValue" text="N/A" x="50%" y="10%" color="Graphics.COLOR_WHITE"
+				font="Graphics.FONT_SMALL"
+				justification="Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER" />
+			<label id="minimumDepthValue" text="min: N/A" x="25%" y="23%"
+				color="Graphics.COLOR_BLACK"
+				font="Graphics.FONT_XTINY"
+				justification="Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER" />
+			<label id="maximumDepthValue" text="max: N/A" x="75%" y="23%"
+				color="Graphics.COLOR_BLACK"
+				font="Graphics.FONT_XTINY"
+				justification="Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER" />
+			<drawable id="DepthChart" class="DepthChartDrawable">
+				<param name="color">Graphics.COLOR_BLACK</param>
+				<param name="background">Graphics.COLOR_WHITE</param>
+			</drawable>
+			<label id="clockValue" text="XX:XX" x="50%" y="93%" color="Graphics.COLOR_WHITE"
+				font="Graphics.FONT_TINY"
+				justification="Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER" />
+		</layout>
+	</layouts>
+</resources>

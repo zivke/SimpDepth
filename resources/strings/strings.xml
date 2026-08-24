@@ -1,0 +1,7 @@
+<strings>
+    <string id="AppName" scope="glance">SimpDepth</string>
+
+    <string id="ShowMinMaxLinesLabel">Show min/max lines</string>
+    <string id="SaltWaterLabel">Salt water</string>
+    <string id="CalibrateToSurfaceLabel">Calibrate to Surface</string>
+</strings>

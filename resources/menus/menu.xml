@@ -1,0 +1,5 @@
+<menu2 id="OptionsMenu" title="Options">
+    <toggle-menu-item id="ShowMinMaxLines" label="@Strings.ShowMinMaxLinesLabel" />
+    <toggle-menu-item id="SaltWater" label="@Strings.SaltWaterLabel" />
+    <menu-item id="CalibrateToSurface" label="@Strings.CalibrateToSurfaceLabel" />
+</menu2>

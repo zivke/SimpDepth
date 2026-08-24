@@ -1,0 +1,4 @@
+<properties>
+    <property id="ShowMinMaxLines" type="boolean">false</property>
+    <property id="SaltWater" type="boolean">false</property>
+</properties>
