@@ -62,10 +62,7 @@ class SimpDepthView extends WatchUi.View {
     var currentDepth = _simpDepthState.getDepth();
     var depthLabel = View.findDrawableById("depthValue") as Text?;
     if (depthLabel != null && currentDepth != null) {
-      var prefix = currentDepth >= 0 ? "Depth: " : "Height: ";
-      depthLabel.setText(
-        prefix + currentDepth.abs().format("%.1f") + unitSuffix
-      );
+      depthLabel.setText(currentDepth.abs().format("%.1f") + unitSuffix);
     }
 
     // Set the shallowest/highest value label (least depth reached)
@@ -73,9 +70,8 @@ class SimpDepthView extends WatchUi.View {
       View.findDrawableById("minimumDepthValue") as Text?;
     var minimumDepth = _simpDepthState.getMinimumDepth();
     if (minimumDepthLabel != null && minimumDepth != null) {
-      var minimumPrefix = minimumDepth >= 0 ? "min depth: " : "max height: ";
       minimumDepthLabel.setText(
-        minimumPrefix + minimumDepth.abs().format("%.1f") + unitSuffix
+        "min: " + minimumDepth.abs().format("%.1f") + unitSuffix
       );
     }
 
@@ -84,9 +80,8 @@ class SimpDepthView extends WatchUi.View {
       View.findDrawableById("maximumDepthValue") as Text?;
     var maximumDepth = _simpDepthState.getMaximumDepth();
     if (maximumDepthLabel != null && maximumDepth != null) {
-      var maximumPrefix = maximumDepth >= 0 ? "max depth: " : "min height: ";
       maximumDepthLabel.setText(
-        maximumPrefix + maximumDepth.abs().format("%.1f") + unitSuffix
+        "max: " + maximumDepth.abs().format("%.1f") + unitSuffix
       );
     }
   }
