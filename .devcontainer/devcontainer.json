@@ -48,7 +48,7 @@
     "source=claude-config-${devcontainerId},target=/home/vscode/.claude,type=volume",
     // Deliberately NOT ${devcontainerId}: the SDK is multi-GB and the developer
     // key is one identity across all your watch projects. Shared on purpose.
-    // ciq-keys must hold the SAME key SimpTemp was published with — see
+    // ciq-keys must hold the SAME key SimpDepth was published with — see
     // .devcontainer/README.md before the first build.
     "source=ciq-sdk,target=/home/vscode/.Garmin,type=volume",
     "source=ciq-sdkmanager,target=/home/vscode/.connect-iq-sdk-manager,type=volume",

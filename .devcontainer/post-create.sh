@@ -33,7 +33,7 @@ if [ ! -f "$HOME/.ciq/developer_key.der" ]; then
   cat <<'WARN'
 
 !! Generated a NEW developer key in the ciq-keys volume.
-!! SimpTemp is already published, so this is almost certainly NOT the key you
+!! SimpDepth is already published, so this is almost certainly NOT the key you
 !! want: the store rejects an update signed with a different key. Copy your
 !! existing developer_key.der into the volume and delete the generated pair:
 !!

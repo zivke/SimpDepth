@@ -1,11 +1,11 @@
 # Devcontainer
 
-VS Code devcontainer for SimpTemp: Connect IQ SDK, simulator, and Claude Code,
+VS Code devcontainer for SimpDepth: Connect IQ SDK, simulator, and Claude Code,
 none of it installed on the host.
 
 ## Before the first build: your developer key
 
-SimpTemp is published, so the store only accepts updates signed with the key it
+SimpDepth is published, so the store only accepts updates signed with the key it
 was originally published with. `post-create.sh` generates a key when the
 `ciq-keys` volume is empty — useful for a new app, wrong for this one. Seed the
 volume with your existing key first:
@@ -43,7 +43,7 @@ the Garmin VS Code extension reads.
    connect-iq-sdk-manager agreement accept
    connect-iq-sdk-manager login
    connect-iq-sdk-manager sdk set 8.2.1
-   make dev-device        # just fenix7 — NOT the full manifest
+   make dev-device        # just instinct2 — NOT the full manifest
    make sdk-link
    ```
 
