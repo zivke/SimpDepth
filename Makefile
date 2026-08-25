@@ -1,4 +1,4 @@
-DEVICE      ?= $(or $(CIQ_DEVICE),fenix7)
+DEVICE      ?= $(or $(CIQ_DEVICE),instinct2)
 KEY         ?= $(HOME)/.ciq/developer_key.der
 JUNGLE      ?= monkey.jungle
 JUNGLE_TEST ?= monkey-test.jungle

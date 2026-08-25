@@ -1,4 +1,5 @@
 <properties>
     <property id="ShowMinMaxLines" type="boolean">false</property>
     <property id="SaltWater" type="boolean">false</property>
+    <property id="Disclaimer" type="string">SimpDepth estimates snorkeling depth from your watch's barometric sensor. It is not a dive computer: do not use it for scuba, freediving, or any decompression-related decision.</property>
 </properties>

@@ -1,13 +1,10 @@
 import Toybox.Application;
-import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
 import Toybox.SensorHistory;
 import Toybox.System;
-import Toybox.Time;
-import Toybox.Timer;
+import Toybox.WatchUi;
 
-(:glance)
 class Status {
   enum Code {
     UNKNOWN_ERROR = -6,
@@ -19,6 +16,7 @@ class Status {
     INITIALIZING = 0,
     LOADING = 1,
     DONE = 2,
+    CALIBRATING = 3,
   }
 
   private var _code as Code = INITIALIZING;
@@ -70,6 +68,9 @@ class Status {
       case DONE:
         message += "Done";
         break;
+      case CALIBRATING:
+        message += "Calibrating...";
+        break;
       default: {
         message += "Status unknown";
         break;
@@ -95,7 +96,31 @@ const REFERENCE_PRESSURE_STORAGE_KEY = "ReferencePressure";
 // calibrated surface pressure, in Pa) to a signed depth in meters: positive
 // is below the surface (uses water density), negative is above it (uses air
 // density). Kept as a standalone function so it can be unit tested directly.
-(:glance)
+// A single, current-as-possible raw pressure reading, used by LiveDiveTracker
+// and DiagnosticPressureTracker for 1 Hz polling. Confirmed empirically (this
+// SDK's simulator) that Activity.Info.rawAmbientPressure/ambientPressure are
+// null without an active Activity recording -- this SensorHistory query is
+// not, and is the same mechanism the app already used for "Calibrate to
+// Surface" before this feature existed.
+function getCurrentRawPressure() as Number or Float or Null {
+  if (
+    !(Toybox has :SensorHistory) ||
+    !(Toybox.SensorHistory has :getPressureHistory)
+  ) {
+    return null;
+  }
+
+  var pressureIterator = Toybox.SensorHistory.getPressureHistory({
+    :period => 1,
+    :order => SensorHistory.ORDER_NEWEST_FIRST,
+  });
+  var sample = pressureIterator.next();
+  if (sample == null) {
+    return null;
+  }
+  return sample.data;
+}
+
 function depthMetersFromPressureDelta(
   delta as Number or Float,
   waterDensity as Float
@@ -107,8 +132,21 @@ function depthMetersFromPressureDelta(
   ).toFloat();
 }
 
-(:glance)
+// Coordinator: owns the three data sources behind the app's four swipeable
+// pages and proxies the shared getters to whichever is active. All three
+// sources sample/reload continuously for the app's lifetime regardless of
+// which page is on screen, so switching pages never shows stale data.
 class SimpDepthState {
+  enum Mode {
+    MODE_LIVE,
+    MODE_DIVE_SUMMARY,
+    MODE_HISTORY,
+    MODE_DIAGNOSTIC,
+  }
+  private const MODE_COUNT = 4;
+
+  private var _mode as Number = MODE_LIVE;
+
   // Fetch the system units
   private var _systemUnits as System.UnitsSystem =
     System.getDeviceSettings().elevationUnits;
@@ -118,221 +156,60 @@ class SimpDepthState {
     System.getDeviceSettings().screenWidth / 100
   ).toNumber();
 
-  // Determine the best size of the sensor history depending on the screen size and resolution
-  private var _historyHours as Number;
   private var _historySize as Number;
-  private var _depthHistory as Lang.Array<Number or Float or Null>;
-  private var _depth as Number or Float or Null; // Current depth/height value
-  private var _minimumDepth as Number or Float or Null; // Shallowest/highest value (least depth)
-  private var _maximumDepth as Number or Float or Null; // Deepest value
 
-  // The pressure reading, in Pascals, that represents the water surface
-  // (depth/height == 0). Null until the first calibration happens.
-  private var _referencePressure as Number or Float or Null;
-
-  // Water density to use for the underwater side of the conversion
-  private var _waterDensity as Float = FRESH_WATER_DENSITY;
-
-  private var _timer as Timer.Timer;
-
-  private var _status as Status;
-
-  // Time to wait before retrying to load the pressure data
-  private var _retryDelay as Number = 2000;
-  private var _retryCount as Number = 0;
+  private var _liveTracker as LiveDiveTracker;
+  private var _historySource as HistoryDepthSource;
+  private var _diagnostic as DiagnosticPressureTracker;
 
   function initialize() {
-    self._historyHours = Math.floor(
+    // Determine the best size of the sensor history/live chart depending on
+    // the screen size and resolution
+    var historyHours = Math.floor(
       System.getDeviceSettings().screenWidth / 30 - _sizeFactor
     ).toNumber();
-    if (self._historyHours > 6) {
-      self._historyHours = 6;
+    if (historyHours > 6) {
+      historyHours = 6;
     }
-    self._historySize = self._historyHours * 30; // 30 data points per hour, every 2 minutes
-    self._depthHistory = new Lang.Array<Number or Float or Null>[_historySize];
+    self._historySize = historyHours * 30; // 30 data points per hour, every 2 minutes
 
-    self._status = new Status();
-    self._timer = new Timer.Timer();
+    self._historySource = new HistoryDepthSource(
+      historyHours,
+      _historySize,
+      _systemUnits
+    );
+    self._liveTracker = new LiveDiveTracker(_historySize, _systemUnits);
+    self._diagnostic = new DiagnosticPressureTracker();
+  }
 
-    self._referencePressure = Application.Storage.getValue(
-      REFERENCE_PRESSURE_STORAGE_KEY
-    ) as Number or Float or Null;
+  function getMode() as Number {
+    return _mode;
+  }
 
-    updateWaterDensity();
+  function nextMode() as Number {
+    _mode = (_mode + 1) % MODE_COUNT;
+    return _mode;
+  }
 
-    // Check device for SensorHistory compatibility
-    if (
-      !(Toybox has :SensorHistory) ||
-      !(Toybox.SensorHistory has :getPressureHistory)
-    ) {
-      _status.setCode(Status.UNSUPPORTED);
-      return;
-    }
+  function previousMode() as Number {
+    _mode = (_mode + MODE_COUNT - 1) % MODE_COUNT;
+    return _mode;
+  }
 
-    load();
+  function calibrateToCurrentSurface() as Void {
+    _historySource.calibrateToCurrentSurface();
   }
 
   function updateWaterDensity() as Void {
-    var saltWater = Application.Properties.getValue("SaltWater") as Boolean?;
-    self._waterDensity = saltWater ? SALT_WATER_DENSITY : FRESH_WATER_DENSITY;
-  }
-
-  // Store the given raw pressure reading (or the latest known one, if none
-  // is given) as the new surface reference and reload.
-  function calibrateToSurface(
-    pressure as Number or Float or Null
-  ) as Void {
-    if (pressure == null) {
-      return;
-    }
-
-    self._referencePressure = pressure;
-    Application.Storage.setValue(REFERENCE_PRESSURE_STORAGE_KEY, pressure);
-    load();
-  }
-
-  function load() as Void {
-    if (_status.getCode() == Status.INITIALIZING) {
-      _status.setCode(Status.LOADING);
-    } else if (_status.getCode() == Status.LOADING) {
-      return;
-    } else if (_status.getCode() == Status.DONE) {
-      _retryCount = 0;
-      _status.setCode(Status.LOADING);
-    } else {
-      _retryCount += 1;
-      if (_retryCount >= 4) {
-        // Fatal error - stop everything and keep the last error
-        _timer.stop();
-        WatchUi.requestUpdate();
-        return;
-      }
-    }
-
-    reset();
-
-    // Get the pressure history iterator
-    var pressureIterator = Toybox.SensorHistory.getPressureHistory({
-      :period => new Time.Duration(
-        Time.Gregorian.SECONDS_PER_HOUR * _historyHours
-      ),
-      :order => SensorHistory.ORDER_NEWEST_FIRST,
-    });
-
-    // Get the pressure indexes for the depth history array
-    var startTime = pressureIterator.getOldestSampleTime();
-    var endTime = pressureIterator.getNewestSampleTime();
-    if (startTime == null || endTime == null) {
-      _status.setCode(Status.NO_START_END_TIME);
-      _timer.stop();
-      _timer.start(method(:load), _retryDelay, true);
-      return;
-    }
-
-    // It has happened sometimes that the time difference between the first and last sample
-    // is more than the expected history size. In this case, we need to adjust the index.
-    var totalTimeDiff = endTime.subtract(startTime);
-    var index_correction =
-      _historySize - 1 - Math.floor(totalTimeDiff.value() / 120).toNumber();
-
-    var sensorSample = pressureIterator.next();
-    if (sensorSample == null) {
-      _status.setCode(Status.INVALID_DATA);
-      _timer.stop();
-      _timer.start(method(:load), _retryDelay, true);
-      return;
-    }
-
-    // Auto-calibrate on the very first ever reading, so the widget works
-    // without any setup (assumes it's launched at/near the surface).
-    if (_referencePressure == null) {
-      calibrateToSurfaceSilently(sensorSample.data);
-    }
-
-    self._depth = convertPressureToDepth(sensorSample.data);
-
-    while (sensorSample != null) {
-      if (sensorSample.data != null) {
-        var timeDiff = sensorSample.when.subtract(startTime);
-        var index =
-          Math.floor(timeDiff.value() / 120).toNumber() + index_correction; // Every 2 minutes
-        if (index >= 0 && index < _historySize) {
-          _depthHistory[index] = convertPressureToDepth(sensorSample.data);
-        } else {
-          System.println(
-            "Error: Pressure reading time out of range (index: " +
-              index +
-              ")"
-          );
-        }
-      }
-
-      sensorSample = pressureIterator.next();
-    }
-
-    // depth() is monotonically increasing in pressure (higher pressure =
-    // deeper), so the SDK's pressure getMin()/getMax() map directly to our
-    // minimum (shallowest/highest point) and maximum (deepest point) depth.
-    self._minimumDepth = convertPressureToDepth(pressureIterator.getMin());
-    self._maximumDepth = convertPressureToDepth(pressureIterator.getMax());
-
-    if (_minimumDepth == null || _maximumDepth == null) {
-      _status.setCode(Status.NO_MIN_MAX_PRESSURE);
-      _timer.stop();
-      _timer.start(method(:load), _retryDelay, true);
-      return;
-    }
-
-    _status.setCode(Status.DONE);
-    _timer.stop();
-    _timer.start(method(:load), 30000, true); // Reload the pressure data every 30 seconds
-
-    // WatchUi.requestUpdate(); gets called by _status.setCode()
-  }
-
-  private function calibrateToSurfaceSilently(
-    pressure as Number or Float or Null
-  ) as Void {
-    if (pressure == null) {
-      return;
-    }
-
-    self._referencePressure = pressure;
-    Application.Storage.setValue(REFERENCE_PRESSURE_STORAGE_KEY, pressure);
-  }
-
-  private function reset() as Void {
-    _depthHistory = new Lang.Array<Number or Float or Null>[_historySize];
-    _depth = null;
-    _minimumDepth = null;
-    _maximumDepth = null;
-  }
-
-  // Converts a raw barometric pressure reading (Pa) into a signed distance
-  // (m or ft, depending on system units) from the calibrated water surface:
-  // positive means below the surface (depth), negative means above it
-  // (height).
-  private function convertPressureToDepth(
-    pressure as Number or Float or Null
-  ) as Number or Float or Null {
-    if (pressure == null || _referencePressure == null) {
-      return null;
-    }
-
-    var depthMeters = depthMetersFromPressureDelta(
-      pressure - _referencePressure,
-      _waterDensity
-    );
-
-    if (_systemUnits == System.UNIT_STATUTE) {
-      return depthMeters * METERS_TO_FEET;
-    }
-
-    return depthMeters;
+    _historySource.updateWaterDensity();
+    _historySource.load();
+    _liveTracker.updateWaterDensity();
   }
 
   function destroy() as Void {
-    _timer.stop();
+    _liveTracker.destroy();
+    _historySource.destroy();
+    _diagnostic.destroy();
   }
 
   function getSystemUnits() as System.UnitsSystem {
@@ -343,35 +220,76 @@ class SimpDepthState {
     return _sizeFactor;
   }
 
-  function getHistoryHours() as Number {
-    return _historyHours;
-  }
-
   function getHistorySize() as Number {
     return _historySize;
   }
 
-  function getDepthHistory() as Lang.Array<Number or Float or Null> {
-    return _depthHistory;
+  // Shared getters used by SimpDepthView/DepthChartDrawable — dispatch to
+  // whichever source backs the current page.
+  function getStatus() as Status {
+    if (_mode == MODE_HISTORY) {
+      return _historySource.getStatus();
+    } else if (_mode == MODE_DIAGNOSTIC) {
+      return _diagnostic.getStatus();
+    }
+    return _liveTracker.getStatus();
   }
 
   function getDepth() as Number or Float or Null {
-    return _depth;
+    if (_mode == MODE_HISTORY) {
+      return _historySource.getDepth();
+    }
+    return _liveTracker.getCurrentDepth();
   }
 
   function getMinimumDepth() as Number or Float or Null {
-    return _minimumDepth;
+    if (_mode == MODE_HISTORY) {
+      return _historySource.getMinimumDepth();
+    }
+    return _liveTracker.getChartMinimum();
   }
 
   function getMaximumDepth() as Number or Float or Null {
-    return _maximumDepth;
+    if (_mode == MODE_HISTORY) {
+      return _historySource.getMaximumDepth();
+    }
+    return _liveTracker.getChartMaximum();
   }
 
-  function getReferencePressure() as Number or Float or Null {
-    return _referencePressure;
+  function getDepthHistory() as Lang.Array<Number or Float or Null> {
+    if (_mode == MODE_HISTORY) {
+      return _historySource.getDepthHistory();
+    }
+    return _liveTracker.getChartHistory();
   }
 
-  function getStatus() as Status {
-    return _status;
+  function getPeriodLabel() as String {
+    if (_mode == MODE_HISTORY) {
+      return _historySource.getPeriodLabel();
+    }
+    return _liveTracker.getPeriodLabel();
+  }
+
+  // Dive-summary-only stats, always tracked live by LiveDiveTracker
+  // regardless of which page is on screen.
+  function getMaxDepthThisDive() as Number or Float or Null {
+    return _liveTracker.getMaxDepthThisDive();
+  }
+
+  function getMaxDepthSession() as Number or Float or Null {
+    return _liveTracker.getMaxDepthSession();
+  }
+
+  function getDiveCount() as Number {
+    return _liveTracker.getDiveCount();
+  }
+
+  // Diagnostic-only readout, always live regardless of the current page.
+  function getCurrentPressure() as Number or Float or Null {
+    return _diagnostic.getCurrentPressure();
+  }
+
+  function getMaxPressureSeen() as Number or Float or Null {
+    return _diagnostic.getMaxPressureSeen();
   }
 }

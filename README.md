@@ -1,15 +1,37 @@
 # SimpDepth
-A simple minimalistic widget for Garmin watches that:
-- displays how far below the water surface you are (depth) or how far above
-  it you are (height), calculated from the internal barometric sensor
-- charts the depth/height history
-- displays the shallowest/highest and deepest points reached over a certain
-  time period
-- displays the current time
+A simple minimalistic app for Garmin watches that estimates recreational
+snorkeling depth from the internal barometric sensor. **It is not a dive
+computer** — it has no decompression, no-stop time, or ascent-rate logic,
+and must never be used for scuba, freediving, or any decompression-related
+decision.
 
-Calibrate the "surface" reference from the widget's Options menu
-("Calibrate to Surface") right before getting in the water; it also
-auto-calibrates itself the first time the widget is opened.
+Four swipeable pages:
+- **Live** — 1 Hz depth tracking for the current session, with a
+  continuously self-calibrating surface reference (no manual calibration
+  needed) and a chart. Current depth plus the min/max shown are scoped to
+  what's currently on the chart (the last couple of minutes), not the
+  whole session.
+- **Dive Stats** — the whole-session numbers: the most recent dive's max
+  depth, the session's max depth, and how many dives have been detected.
+  Resets when the app is closed; nothing here is saved between sessions.
+- **History** — a longer, lower-resolution chart (several hours) backed by
+  the watch's own stored pressure history, with the shallowest/deepest
+  points reached over that period. Calibrate its "surface" reference from
+  the Options menu ("Calibrate to Surface") right before getting in the
+  water; it also auto-calibrates itself the first time the app is opened.
+- **Diagnostic** — a measurement tool, not something you need day-to-day.
+  Garmin's barometric sensors saturate or get clamped by firmware somewhere
+  past shallow-water pressure, and where that happens is undocumented and
+  device-specific. This page shows the current raw pressure (Pa) and the
+  max seen since the app was opened, so you can find that ceiling yourself:
+  start the app at the surface, descend in ~0.5 m increments holding each
+  for a few seconds, and watch for the value to stop climbing with depth —
+  that pressure is the ceiling for your device. The Live page's
+  `CEILING_PA` constant (`source/utils/LiveDiveTracker.mc`) ships with an
+  unverified placeholder and should be updated with your measured value.
+
+The Options menu also has a "Salt water" setting, to account for the higher
+density of salt water when converting pressure to depth.
 
 # Supported devices
 - Approach® S70 42mm

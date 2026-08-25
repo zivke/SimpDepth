@@ -1,18 +1,24 @@
 # SimpDepth
 
-Garmin Connect IQ widget: shows depth below the water surface, or height
-above it, derived from the internal barometric pressure sensor. Charts
-history, shows the shallowest/deepest points over a period, and the current
-time. Requires calibrating a surface pressure reference (auto-calibrates on
-first run; re-calibrate via the Options menu). Only devices with a
-barometric altimeter are supported.
+Garmin Connect IQ watch app: shows depth below the water surface, or height
+above it, derived from the internal barometric pressure sensor. Four
+swipeable pages: Live (1 Hz tracking, self-calibrating, current/min/max
+scoped to the visible chart window), Dive Stats (whole-session per-dive max,
+session max, dive count — from LiveDiveTracker, not persisted across app
+launches), History (long-span low-res chart, calibrates via the Options
+menu), and Diagnostic (raw-pressure measurement tool, see README). Only
+devices with a barometric altimeter are supported.
+
+This is a depth *estimate* for recreational snorkeling, not a dive computer
+— no decompression/no-stop/ascent-rate logic, no depth-triggered alerts.
+Keep it that way; see README and the Settings-screen disclaimer.
 
 Everything runs in the devcontainer — SDK, simulator and developer key are
 already set up. Never install or generate them.
 
 ## Commands
 
-- `make build` / `make release` — compile for `$(DEVICE)` (default `fenix7`)
+- `make build` / `make release` — compile for `$(DEVICE)` (default `instinct2`)
 - `make sim` then `make run` — simulator must be running before `monkeydo`
 - `make test` — `monkey-test.jungle` with `--unit-test`
 - `make package` — `.iq` for the store; needs `make all-devices` first
@@ -20,7 +26,7 @@ already set up. Never install or generate them.
 
 ## Layout
 
-- `source/` — widget code
+- `source/` — app code
 - `resources/` — base resources, compiled into `Rez.*`
 - `resources-round/`, `resources-rectangle/`, `resources-semioctagon-176x176/`,
   `resources-instinct2s/`, `resources-instincte40mm/` — layout overrides layered

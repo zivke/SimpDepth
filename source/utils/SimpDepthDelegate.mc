@@ -38,4 +38,48 @@ class SimpDepthDelegate extends WatchUi.BehaviorDelegate {
     );
     return true;
   }
+
+  // Swipe/page between the four pages: Live -> Dive Stats -> History ->
+  // Diagnostic.
+  function onNextPage() as Boolean {
+    var simpDepthState = getApp().getSimpDepthState();
+    if (simpDepthState == null) {
+      return true;
+    }
+    return switchPage(simpDepthState, simpDepthState.nextMode());
+  }
+
+  function onPreviousPage() as Boolean {
+    var simpDepthState = getApp().getSimpDepthState();
+    if (simpDepthState == null) {
+      return true;
+    }
+    return switchPage(simpDepthState, simpDepthState.previousMode());
+  }
+
+  private function switchPage(
+    simpDepthState as SimpDepthState,
+    newMode as Number
+  ) as Boolean {
+    if (newMode == SimpDepthState.MODE_DIAGNOSTIC) {
+      WatchUi.switchToView(
+        new SimpDepthDiagnosticView(simpDepthState),
+        new SimpDepthDelegate(),
+        WatchUi.SLIDE_IMMEDIATE
+      );
+    } else if (newMode == SimpDepthState.MODE_DIVE_SUMMARY) {
+      WatchUi.switchToView(
+        new SimpDepthDiveSummaryView(simpDepthState),
+        new SimpDepthDelegate(),
+        WatchUi.SLIDE_IMMEDIATE
+      );
+    } else {
+      WatchUi.switchToView(
+        new SimpDepthView(simpDepthState),
+        new SimpDepthDelegate(),
+        WatchUi.SLIDE_IMMEDIATE
+      );
+    }
+    return true;
+  }
 }

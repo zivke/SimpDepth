@@ -3,12 +3,6 @@
 		<shape type="circle" x="144" y="31" radius="35" color="Graphics.COLOR_BLACK" />
 	</drawable-list>
 	<layouts>
-		<layout id="GlanceLayout" scope="Glance">
-			<label id="GlanceLabel" text="@Strings.AppName" x="0" y="50%"
-				color="Graphics.COLOR_WHITE" background="Graphics.COLOR_TRANSPARENT"
-				font="Graphics.FONT_GLANCE"
-				justification="Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER" />
-		</layout>
 		<layout id="MainLayout">
 			<drawable id="backdrop" />
 			<label id="clockValue" text="XX:XX" x="45%" y="10" color="Graphics.COLOR_BLACK"

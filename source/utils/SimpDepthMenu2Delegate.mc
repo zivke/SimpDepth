@@ -1,7 +1,4 @@
-import Toybox.Application;
 import Toybox.Lang;
-import Toybox.SensorHistory;
-import Toybox.System;
 import Toybox.WatchUi;
 
 class SimpDepthMenu2Delegate extends WatchUi.Menu2InputDelegate {
@@ -29,31 +26,14 @@ class SimpDepthMenu2Delegate extends WatchUi.Menu2InputDelegate {
       var simpDepthState = getApp().getSimpDepthState();
       if (simpDepthState != null) {
         simpDepthState.updateWaterDensity();
-        simpDepthState.load();
       }
       return;
     }
 
     if (item.getId() == :CalibrateToSurface) {
       var simpDepthState = getApp().getSimpDepthState();
-      if (simpDepthState == null) {
-        return;
-      }
-
-      if (
-        !(Toybox has :SensorHistory) ||
-        !(Toybox.SensorHistory has :getPressureHistory)
-      ) {
-        return;
-      }
-
-      var pressureIterator = Toybox.SensorHistory.getPressureHistory({
-        :period => 1,
-        :order => SensorHistory.ORDER_NEWEST_FIRST,
-      });
-      var sensorSample = pressureIterator.next();
-      if (sensorSample != null) {
-        simpDepthState.calibrateToSurface(sensorSample.data);
+      if (simpDepthState != null) {
+        simpDepthState.calibrateToCurrentSurface();
       }
     }
   }

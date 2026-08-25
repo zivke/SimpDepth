@@ -52,38 +52,47 @@ class SimpDepthView extends WatchUi.View {
     }
   }
 
-  // Draw the current depth/height value plus the shallowest/deepest extremes
+  // Draw the current depth/height value (the black accent circle on round
+  // layouts) plus the shallowest/deepest extremes, in real time. Same
+  // meaning in both modes -- only what backs "current"/"min"/"max" differs:
+  // History is the period's SensorHistory data, Live is the current live
+  // reading and the visible chart window's extremes.
   private function drawDepthValues(dc as Graphics.Dc) {
     var unitSuffix =
       _simpDepthState.getSystemUnits() == System.UNIT_STATUTE ? "ft" : "m";
 
-    // Set the depth/height label value. Positive means below the surface
-    // (depth), negative means above it (height).
-    var currentDepth = _simpDepthState.getDepth();
+    // Positive means below the surface (depth), negative means above it
+    // (height).
     var depthLabel = View.findDrawableById("depthValue") as Text?;
-    if (depthLabel != null && currentDepth != null) {
-      depthLabel.setText(currentDepth.abs().format("%.1f") + unitSuffix);
+    if (depthLabel != null) {
+      depthLabel.setText(formatDepth(_simpDepthState.getDepth(), unitSuffix));
     }
 
-    // Set the shallowest/highest value label (least depth reached)
     var minimumDepthLabel =
       View.findDrawableById("minimumDepthValue") as Text?;
-    var minimumDepth = _simpDepthState.getMinimumDepth();
-    if (minimumDepthLabel != null && minimumDepth != null) {
+    if (minimumDepthLabel != null) {
       minimumDepthLabel.setText(
-        "min: " + minimumDepth.abs().format("%.1f") + unitSuffix
+        "min: " + formatDepth(_simpDepthState.getMinimumDepth(), unitSuffix)
       );
     }
 
-    // Set the deepest value label (most depth reached)
     var maximumDepthLabel =
       View.findDrawableById("maximumDepthValue") as Text?;
-    var maximumDepth = _simpDepthState.getMaximumDepth();
-    if (maximumDepthLabel != null && maximumDepth != null) {
+    if (maximumDepthLabel != null) {
       maximumDepthLabel.setText(
-        "max: " + maximumDepth.abs().format("%.1f") + unitSuffix
+        "max: " + formatDepth(_simpDepthState.getMaximumDepth(), unitSuffix)
       );
     }
+  }
+
+  private function formatDepth(
+    depth as Number or Float or Null,
+    unitSuffix as String
+  ) as String {
+    if (depth == null) {
+      return "N/A";
+    }
+    return depth.abs().format("%.1f") + unitSuffix;
   }
 
   // Draw the depth chart

@@ -5,7 +5,7 @@
         Use "Monkey C: Edit Application" from the Visual Studio Code command palette
         to update the application attributes.
     -->
-    <iq:application id="61c1f187-2ab5-473a-a791-4c73b04ff438" type="widget" name="@Strings.AppName" entry="SimpDepthApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.2.0">
+    <iq:application id="61c1f187-2ab5-473a-a791-4c73b04ff438" type="watch-app" name="@Strings.AppName" entry="SimpDepthApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="3.2.0">
         <!--
             Use the following from the Visual Studio Code comand palette to edit
             the build targets:
@@ -115,6 +115,7 @@
             palette to update permissions.
         -->
         <iq:permissions>
+            <iq:uses-permission id="Sensor"/>
             <iq:uses-permission id="SensorHistory"/>
         </iq:permissions>
         <!--

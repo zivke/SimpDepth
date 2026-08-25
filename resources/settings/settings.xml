@@ -5,4 +5,7 @@
     <setting propertyKey="@Properties.SaltWater" title="@Strings.SaltWaterLabel">
         <settingConfig type="boolean" required="true" />
     </setting>
+    <setting propertyKey="@Properties.Disclaimer" title="@Strings.DisclaimerTitle">
+        <settingConfig type="alphaNumeric" readonly="true" />
+    </setting>
 </settings>

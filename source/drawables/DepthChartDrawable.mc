@@ -102,8 +102,7 @@ class DepthChartDrawable extends WatchUi.Drawable {
       dc.drawLine(i, chartY + chartHeight, i, chartY + chartHeight - 4);
     }
 
-    var totalChartTimeText =
-      "Last " + _simpDepthState.getHistoryHours() + " hours";
+    var totalChartTimeText = _simpDepthState.getPeriodLabel();
 
     dc.setColor(_foregroundColor, Graphics.COLOR_TRANSPARENT);
     dc.drawText(
