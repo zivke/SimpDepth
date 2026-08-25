@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Gave SimpDepth its own app id, independent of SimpTemp (the app it was
+  originally cloned from). No published listing existed under the old id,
+  so this is a clean break — no behavior change for anyone running the app.
+
 ## 0.2.0
 
 - Converted from a widget to a watch app so it no longer gets closed by the
