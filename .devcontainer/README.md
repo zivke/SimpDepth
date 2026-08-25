@@ -5,10 +5,13 @@ none of it installed on the host.
 
 ## Before the first build: your developer key
 
-SimpDepth is published, so the store only accepts updates signed with the key it
-was originally published with. `post-create.sh` generates a key when the
-`ciq-keys` volume is empty — useful for a new app, wrong for this one. Seed the
-volume with your existing key first:
+SimpDepth itself hasn't been published yet (early development), but the
+developer key is tied to *you*, not to this app — it's the same signing
+identity the Connect IQ Store expects on updates to any of your other
+published apps. `post-create.sh` generates a key when the `ciq-keys` volume
+is empty — fine if this is genuinely your first Garmin project, wrong if you
+already have a key from another one. Seed the volume with your existing key
+first in that case:
 
 ```
 docker volume create ciq-keys

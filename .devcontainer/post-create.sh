@@ -33,9 +33,11 @@ if [ ! -f "$HOME/.ciq/developer_key.der" ]; then
   cat <<'WARN'
 
 !! Generated a NEW developer key in the ciq-keys volume.
-!! SimpDepth is already published, so this is almost certainly NOT the key you
-!! want: the store rejects an update signed with a different key. Copy your
-!! existing developer_key.der into the volume and delete the generated pair:
+!! The developer key is tied to you, not to any one app — if you already have
+!! a key from another Garmin project, this is almost certainly NOT the one you
+!! want: the store rejects an update to an already-published app if it's
+!! signed with a different key. Copy your existing developer_key.der into the
+!! volume and delete the generated pair:
 !!
 !!   docker run --rm -v ciq-keys:/k -v "$HOME/<dir-with-your-key>":/src:ro \
 !!     alpine sh -c 'cp /src/developer_key.der /src/developer_key.pem /k/'
