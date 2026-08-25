@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0
 
 - Converted from a widget to a watch app so it no longer gets closed by the
   widget loop mid-session.
