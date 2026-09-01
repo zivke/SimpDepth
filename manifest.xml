@@ -115,7 +115,7 @@
             palette to update permissions.
         -->
         <iq:permissions>
-            <iq:uses-permission id="Sensor"/>
+            <iq:uses-permission id="Fit"/>
             <iq:uses-permission id="SensorHistory"/>
         </iq:permissions>
         <!--

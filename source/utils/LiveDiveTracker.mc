@@ -10,12 +10,13 @@ import Toybox.WatchUi;
 // step needed), per-dive and per-session max depth, and a dive count.
 //
 // Reads pressure via the shared getCurrentRawPressure() helper (see
-// SimpDepthState.mc), NOT Activity.Info.ambientPressure -- that field's
-// two-stage smoothing filter is tuned for hiking-speed changes and badly
-// lags a ~1 m/s descent (reads shallow going down, keeps rising after you
-// stop). Activity.Info.rawAmbientPressure would avoid that filter, but was
-// confirmed empirically (this SDK's simulator) to stay null the whole time
-// without an active Activity recording, which this app deliberately isn't.
+// SimpDepthState.mc) -- Activity.Info.rawAmbientPressure, kept live for the
+// app's whole lifetime by HiddenRecordingSession. NOT Activity.Info.
+// ambientPressure (a filter tuned for hiking-speed changes that badly lags a
+// ~1 m/s descent), and NOT SensorHistory or Sensor.Info.pressure (both
+// throttled to a couple-minutes refresh on real hardware outside of an
+// active recording, confirmed via real salt-water testing -- too slow for
+// 1 Hz live tracking).
 class LiveDiveTracker {
   const STATE_UNKNOWN = 0;
   const STATE_SURFACE = 1;

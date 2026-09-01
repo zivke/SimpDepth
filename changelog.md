@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the Live and Diagnostic pages' pressure reading being stuck at a
+  couple-minutes cadence instead of 1 Hz, and reporting wildly wrong depth
+  when it did update. Confirmed via real salt-water testing that on real
+  hardware, outside of an active Activity recording, the barometer is only
+  refreshed by the OS every couple of minutes — true regardless of which
+  Toybox API reads it, so the self-calibrating surface reference ended up
+  built from near-duplicate stale values. The app now keeps a minimal,
+  hidden recording running for its own lifetime (never surfaced to the user,
+  never saved, nothing synced to Garmin Connect) purely to unlock live
+  barometer sampling. History is unaffected — its couple-minutes cadence is
+  expected.
+
 ## 0.2.1
 
 - Gave SimpDepth its own app id, independent of SimpTemp (the app it was

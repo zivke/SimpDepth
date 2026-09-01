@@ -1,3 +1,4 @@
+import Toybox.Activity;
 import Toybox.Application;
 import Toybox.Lang;
 import Toybox.Math;
@@ -97,28 +98,28 @@ const REFERENCE_PRESSURE_STORAGE_KEY = "ReferencePressure";
 // is below the surface (uses water density), negative is above it (uses air
 // density). Kept as a standalone function so it can be unit tested directly.
 // A single, current-as-possible raw pressure reading, used by LiveDiveTracker
-// and DiagnosticPressureTracker for 1 Hz polling. Confirmed empirically (this
-// SDK's simulator) that Activity.Info.rawAmbientPressure/ambientPressure are
-// null without an active Activity recording -- this SensorHistory query is
-// not, and is the same mechanism the app already used for "Calibrate to
-// Surface" before this feature existed.
+// and DiagnosticPressureTracker for 1 Hz polling. Deliberately NOT
+// SensorHistory or Sensor.Info.pressure -- confirmed via real salt-water
+// testing that outside of an active Activity recording, real hardware only
+// refreshes the pressure sensor every couple of minutes no matter which of
+// those two is polled or how often, so a 1 Hz Timer just re-reads the same
+// stale sample and the self-calibrating surface reference ends up built from
+// near-duplicate values. Activity.Info.rawAmbientPressure (unfiltered,
+// temperature-compensated) DOES update live, but only while a recording is
+// active -- see HiddenRecordingSession, which keeps one running for exactly
+// this, for the app's whole lifetime, without ever exposing it to the user.
+// HistoryDepthSource's own one-off SensorHistory query for "Calibrate to
+// Surface" is left alone: that page's couple-minutes cadence is expected.
 function getCurrentRawPressure() as Number or Float or Null {
-  if (
-    !(Toybox has :SensorHistory) ||
-    !(Toybox.SensorHistory has :getPressureHistory)
-  ) {
+  if (!(Toybox has :Activity) || !(Toybox.Activity has :getActivityInfo)) {
     return null;
   }
 
-  var pressureIterator = Toybox.SensorHistory.getPressureHistory({
-    :period => 1,
-    :order => SensorHistory.ORDER_NEWEST_FIRST,
-  });
-  var sample = pressureIterator.next();
-  if (sample == null) {
+  var info = Activity.getActivityInfo();
+  if (info == null) {
     return null;
   }
-  return sample.data;
+  return info.rawAmbientPressure;
 }
 
 function depthMetersFromPressureDelta(
@@ -161,8 +162,13 @@ class SimpDepthState {
   private var _liveTracker as LiveDiveTracker;
   private var _historySource as HistoryDepthSource;
   private var _diagnostic as DiagnosticPressureTracker;
+  private var _recordingSession as HiddenRecordingSession;
 
   function initialize() {
+    // Started before the other sources so the very first sample() call
+    // already has a live recording behind Activity.getActivityInfo().
+    self._recordingSession = new HiddenRecordingSession();
+
     // Determine the best size of the sensor history/live chart depending on
     // the screen size and resolution
     var historyHours = Math.floor(
@@ -210,6 +216,9 @@ class SimpDepthState {
     _liveTracker.destroy();
     _historySource.destroy();
     _diagnostic.destroy();
+    // Last: stop()+discard() the hidden session only once nothing is still
+    // reading Activity.getActivityInfo() from it.
+    _recordingSession.destroy();
   }
 
   function getSystemUnits() as System.UnitsSystem {
