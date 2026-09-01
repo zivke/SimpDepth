@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.2
 
 - Fixed the Live and Diagnostic pages' pressure reading being stuck at a
   couple-minutes cadence instead of 1 Hz, and reporting wildly wrong depth
